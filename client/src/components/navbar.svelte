@@ -1,0 +1,1 @@
+<div class="h-20 w-full ">this is navbar</div>
