@@ -10,20 +10,25 @@
     "build": "tsc"
   },
   "prisma": {
-    "seed": "ts-node src/utils/seed.ts" 
+    "seed": "ts-node src/utils/seed.ts"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "type": "commonjs",
   "dependencies": {
+    "@faker-js/faker": "^9.9.0",
     "@prisma/client": "^6.12.0",
+    "bcryptjs": "^3.0.2",
     "dotenv": "^17.2.1",
     "express": "^5.1.0",
+    "jsonwebtoken": "^9.0.2",
     "pg": "^8.16.3"
   },
   "devDependencies": {
+    "@types/bcryptjs": "^2.4.6",
     "@types/express": "^5.0.3",
+    "@types/jsonwebtoken": "^9.0.10",
     "@types/node": "^24.1.0",
     "nodemon": "^3.1.10",
     "prisma": "^6.12.0",

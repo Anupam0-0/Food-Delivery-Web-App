@@ -14,10 +14,204 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+enum Role {
+  ADMIN
+  MANAGER
+  CUSTOMER
+  DELIVERY
+}
+
+enum DiscountType {
+  FLAT
+  PERCENT
+}
+
+enum OrderStatus {
+  PENDING
+  ACCEPTED
+  PREPARING
+  READY
+  OUT_FOR_DELIVERY
+  DELIVERED
+  CANCELLED
+}
+
+enum PaymentMethod {
+  ONLINE
+  UPI
+  CASH
+}
+
+enum PaymentType {
+  COD
+  COP
+}
+
+enum PaymentStatus {
+  PENDING
+  COMPLETED
+  FAILED
+}
+
+enum DeliveryStatus {
+  ASSIGNED
+  PICKED_UP
+  EN_ROUTE
+  DELIVERED
+  FAILED
+}
 
 model User {
-  id    Int     @id @default(autoincrement())
-  name  String
-  email String  @unique
+  id        String   @id @default(uuid())
+  name      String
+  email     String   @unique
+  password  String?
+  role      Role?
+//   phone     String
   createdAt DateTime @default(now())
+
+  addresses          Address[]
+  ownedRestaurants   Restaurant[]        @relation("Owner")
+  managedRestaurants Restaurant[]        @relation("Manager")
+  orders             Order[]             @relation("Customer")
+  deliveries         Order[]             @relation("Delivery")
+  deliveryLogs       DeliveryStatusLog[]
+  ratingsGiven       Rating[]            @relation("Customer")
+  deliveryRatings    Rating[]            @relation("Delivery")
+}
+
+model Address {
+  id      String @id @default(uuid())
+  user    User   @relation(fields: [userId], references: [id])
+  userId  String
+  label   String
+  address String
+  lat     Float
+  lng     Float
+
+  Order Order[]
+}
+
+model Restaurant {
+  id          String   @id @default(uuid())
+  name        String
+  description String
+  owner       User     @relation("Owner", fields: [ownerId], references: [id])
+  ownerId     String
+  manager     User     @relation("Manager", fields: [managerId], references: [id])
+  managerId   String
+  createdAt   DateTime @default(now())
+
+  menuItems MenuItem[]
+  orders    Order[]
+  ratings   Rating[]
+}
+
+model MenuItem {
+  id           String      @id @default(uuid())
+  restaurant   Restaurant  @relation(fields: [restaurantId], references: [id])
+  restaurantId String
+  name         String
+  description  String
+  price        Float
+  available    Boolean
+  imageUrl     String
+  orderItems   OrderItem[]
+}
+
+model Discount {
+  id             String       @id @default(uuid())
+  code           String       @unique
+  type           DiscountType
+  value          Float
+  minOrderAmount Float
+  startDate      DateTime
+  endDate        DateTime
+  isActive       Boolean
+  usageLimit     Int
+  orders         Order[]
+}
+
+model Order {
+  id             String      @id @default(uuid())
+  customer       User        @relation("Customer", fields: [customerId], references: [id])
+  customerId     String
+  restaurant     Restaurant  @relation(fields: [restaurantId], references: [id])
+  restaurantId   String
+  address        Address     @relation(fields: [addressId], references: [id])
+  addressId      String
+  delivery       User        @relation("Delivery", fields: [deliveryId], references: [id])
+  deliveryId     String
+  deliveryTime   DateTime
+  status         OrderStatus
+  totalAmount    Float
+  discount       Discount?   @relation(fields: [discountId], references: [id])
+  discountId     String?
+  discountAmount Float
+  finalAmount    Float
+  otp            String
+  createdAt      DateTime    @default(now())
+
+  orderItems   OrderItem[]
+  payment      Payment?
+  rating       Rating?
+  deliveryLogs DeliveryStatusLog[]
+  deliveryOtp  DeliveryOtp?
+}
+
+model OrderItem {
+  id         String   @id @default(uuid())
+  order      Order    @relation(fields: [orderId], references: [id])
+  orderId    String
+  menuItem   MenuItem @relation(fields: [menuItemId], references: [id])
+  menuItemId String
+  quantity   Int
+  price      Float
+}
+
+model Payment {
+  id             String        @id @default(uuid())
+  order          Order         @relation(fields: [orderId], references: [id])
+  orderId        String        @unique
+  method         PaymentMethod
+  type           PaymentType
+  status         PaymentStatus
+  transactionRef String
+  createdAt      DateTime      @default(now())
+}
+
+model Rating {
+  id               String     @id @default(uuid())
+  order            Order      @relation(fields: [orderId], references: [id])
+  orderId          String     @unique
+  customer         User       @relation("Customer", fields: [customerId], references: [id])
+  customerId       String
+  restaurant       Restaurant @relation(fields: [restaurantId], references: [id])
+  restaurantId     String
+  delivery         User       @relation("Delivery", fields: [deliveryId], references: [id])
+  deliveryId       String
+  restaurantRating Int
+  deliveryRating   Int
+  comment          String
+  createdAt        DateTime   @default(now())
+}
+
+model DeliveryStatusLog {
+  id         String         @id @default(uuid())
+  order      Order          @relation(fields: [orderId], references: [id])
+  orderId    String
+  delivery   User           @relation(fields: [deliveryId], references: [id])
+  deliveryId String
+  status     DeliveryStatus
+  timestamp  DateTime
+  note       String
+}
+
+model DeliveryOtp {
+  id         String    @id @default(uuid())
+  order      Order     @relation(fields: [orderId], references: [id])
+  orderId    String    @unique
+  otp        String
+  verified   Boolean
+  verifiedAt DateTime?
 }
